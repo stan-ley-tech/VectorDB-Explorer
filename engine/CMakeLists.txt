@@ -19,8 +19,15 @@ add_library(vdb_engine STATIC
     cpp/ivf_index.cpp
 )
 target_include_directories(vdb_engine PUBLIC include)
+set_target_properties(vdb_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+option(VDB_BUILD_TESTS "Build the vdb_engine test suite" ON)
 option(VDB_BUILD_PYTHON_BINDINGS "Build the pybind11 Python module" OFF)
+
+if(VDB_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 if(VDB_BUILD_PYTHON_BINDINGS)
     add_subdirectory(bindings)
