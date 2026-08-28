@@ -16,6 +16,7 @@ endif()
 
 add_library(vdb_engine STATIC
     cpp/search.cpp
+    cpp/ivf_index.cpp
 )
 target_include_directories(vdb_engine PUBLIC include)
 
