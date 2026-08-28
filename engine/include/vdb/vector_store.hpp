@@ -93,6 +93,18 @@ public:
     const std::vector<std::uint64_t>& ids() const { return ids_; }
     const std::vector<float>& raw_data() const { return data_; }
 
+    // Approximate resident memory for the store's own buffers, in bytes.
+    // Uses container capacity (not size) since that reflects actual
+    // allocated memory, including headroom from amortized growth. Doesn't
+    // include unordered_map bucket overhead precisely, only a reasonable
+    // per-entry estimate, since libstdc++/libc++ don't expose that exactly.
+    std::size_t memory_usage_bytes() const {
+        const std::size_t data_bytes = data_.capacity() * sizeof(float);
+        const std::size_t ids_bytes = ids_.capacity() * sizeof(std::uint64_t);
+        const std::size_t index_bytes = id_to_row_.size() * (sizeof(std::uint64_t) + sizeof(std::size_t) + 16);
+        return data_bytes + ids_bytes + index_bytes;
+    }
+
 private:
     std::size_t dim_;
     std::vector<float> data_;
