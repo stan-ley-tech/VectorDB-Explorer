@@ -33,6 +33,7 @@ frontend/dist/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+frontend/*.tsbuildinfo
 node_modules/
 
 # Env / secrets
@@ -46,6 +47,9 @@ datasets/generated/
 # Benchmark output
 benchmarks/results/*.json
 !benchmarks/results/.gitkeep
+
+# Local tooling
+.claude/
 
 # Editors / OS
 .vscode/
