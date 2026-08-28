@@ -22,10 +22,16 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // FormData bodies (file uploads) must NOT get an explicit Content-Type:
+  // the browser sets its own multipart boundary when it's left unset, and
+  // forcing application/json here would make the server fail to parse the
+  // body at all.
+  const isFormData = init?.body instanceof FormData;
+
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(init?.body && !isFormData ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   });
