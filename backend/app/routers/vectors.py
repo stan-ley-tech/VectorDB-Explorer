@@ -231,7 +231,7 @@ def export_dataset(
                     {
                         "external_id": record.external_id,
                         "document": record.document,
-                        "embedding": list(record.embedding),
+                        "embedding": [float(x) for x in record.embedding],
                         "metadata": record.vector_metadata.data if record.vector_metadata else {},
                     }
                 )

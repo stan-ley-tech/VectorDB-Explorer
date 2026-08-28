@@ -1,5 +1,6 @@
 import numpy as np
 
+import app.engine_bridge as engine_bridge
 from app.benchmark_runner import (
     _mean_recall_at_k,
     _percentile,
@@ -7,6 +8,7 @@ from app.benchmark_runner import (
     run_benchmark,
 )
 from app.engine_bridge import Metric
+from tests.conftest import requires_native_engine
 
 
 def test_generate_synthetic_dataset_has_requested_shape():
@@ -52,10 +54,11 @@ def test_mean_recall_of_empty_ground_truth_is_zero():
     assert _mean_recall_at_k([], [], k=5) == 0.0
 
 
-def test_run_benchmark_without_native_engine_returns_brute_force_only():
-    # No compiled vdb_native extension in this environment, so the indexed
-    # mode should be skipped rather than raising - this exercises the same
-    # graceful-degradation path a machine without a C++ toolchain hits.
+def test_run_benchmark_without_native_engine_returns_brute_force_only(monkeypatch):
+    # Forces the same graceful-degradation path a machine without a C++
+    # toolchain hits, regardless of whether this environment actually has
+    # the compiled extension.
+    monkeypatch.setattr(engine_bridge, "NATIVE_ENGINE_AVAILABLE", False)
     results = run_benchmark(
         dataset_size=200,
         dimensions=16,
@@ -78,7 +81,8 @@ def test_run_benchmark_without_native_engine_returns_brute_force_only():
     assert brute_force.index_build_ms is None
 
 
-def test_run_benchmark_is_consistent_between_sequential_and_concurrent_runs():
+def test_run_benchmark_is_consistent_between_sequential_and_concurrent_runs(monkeypatch):
+    monkeypatch.setattr(engine_bridge, "NATIVE_ENGINE_AVAILABLE", False)
     kwargs = dict(
         dataset_size=100,
         dimensions=8,
@@ -95,3 +99,25 @@ def test_run_benchmark_is_consistent_between_sequential_and_concurrent_runs():
     # Same seeds, same data/queries - only the execution strategy differs,
     # so recall must match even though wall-clock timings will vary.
     assert sequential[0].recall_at_k == concurrent[0].recall_at_k
+
+
+@requires_native_engine
+def test_run_benchmark_with_native_engine_includes_indexed_mode():
+    results = run_benchmark(
+        dataset_size=300,
+        dimensions=16,
+        top_k=5,
+        metric=Metric.COSINE,
+        nlist=6,
+        nprobe=3,
+        num_queries=20,
+        concurrency=2,
+        seed=5,
+    )
+
+    assert {r.mode for r in results} == {"brute_force", "indexed"}
+    indexed = next(r for r in results if r.mode == "indexed")
+    assert indexed.recall_at_k is not None
+    assert 0.0 <= indexed.recall_at_k <= 1.0
+    assert indexed.index_build_ms is not None
+    assert indexed.memory_bytes > 0

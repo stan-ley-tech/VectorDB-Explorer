@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+import app.engine_bridge as engine_bridge
 from app.engine_bridge import (
     Metric,
     NativeEngineUnavailableError,
@@ -9,6 +10,7 @@ from app.engine_bridge import (
     build_ivf_index,
     estimate_memory_bytes,
 )
+from tests.conftest import requires_native_engine
 
 
 def fixture_vectors() -> np.ndarray:
@@ -48,15 +50,15 @@ def test_numpy_brute_force_top_k_zero_returns_no_hits():
     assert brute_force_search_numpy(fixture_vectors(), [1.0, 0.0], top_k=0, metric=Metric.COSINE) == []
 
 
-def test_brute_force_search_dispatches_to_numpy_when_native_missing():
-    # This test environment has no compiled vdb_native extension, so
-    # brute_force_search must fall back to the numpy path and agree with it.
+def test_brute_force_search_falls_back_to_numpy_when_native_unavailable(monkeypatch):
+    monkeypatch.setattr(engine_bridge, "NATIVE_ENGINE_AVAILABLE", False)
     hits_a = brute_force_search(fixture_vectors(), [1.0, 0.0], top_k=2, metric=Metric.COSINE)
     hits_b = brute_force_search_numpy(fixture_vectors(), [1.0, 0.0], top_k=2, metric=Metric.COSINE)
     assert hits_a == hits_b
 
 
-def test_build_ivf_index_without_native_engine_raises_clear_error():
+def test_build_ivf_index_without_native_engine_raises_clear_error(monkeypatch):
+    monkeypatch.setattr(engine_bridge, "NATIVE_ENGINE_AVAILABLE", False)
     with pytest.raises(NativeEngineUnavailableError):
         build_ivf_index(fixture_vectors(), Metric.COSINE, nlist=2)
 
@@ -64,3 +66,18 @@ def test_build_ivf_index_without_native_engine_raises_clear_error():
 def test_estimate_memory_bytes_matches_numpy_nbytes():
     vectors = fixture_vectors()
     assert estimate_memory_bytes(vectors) == vectors.nbytes
+
+
+@requires_native_engine
+def test_brute_force_search_uses_native_engine_when_available():
+    hits = brute_force_search(fixture_vectors(), [1.0, 0.0], top_k=2, metric=Metric.COSINE)
+    assert [h.row for h in hits] == [0, 3]
+
+
+@requires_native_engine
+def test_build_ivf_index_with_native_engine_returns_a_working_handle():
+    handle = build_ivf_index(fixture_vectors(), Metric.COSINE, nlist=2)
+    hits = handle.search([1.0, 0.0], top_k=2, nprobe=2)
+    assert len(hits) == 2
+    assert handle.memory_usage_bytes() > 0
+    assert len(handle.cluster_sizes()) == 2

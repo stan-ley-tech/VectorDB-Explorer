@@ -4,8 +4,16 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+import app.engine_bridge as engine_bridge
 import app.models  # noqa: F401  (registers models on Base.metadata)
 from app.database import Base
+
+# Exercises the real IVF index build/search path. Only meaningful where the
+# vdb_native extension was actually built (CI builds it; a plain local
+# `pytest` run on a machine without a C++ toolchain won't have it).
+requires_native_engine = pytest.mark.skipif(
+    not engine_bridge.NATIVE_ENGINE_AVAILABLE, reason="requires the compiled vdb_native extension"
+)
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
