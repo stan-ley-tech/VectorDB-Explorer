@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  engine-tests:
+    name: C++ engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S engine -B engine/build -DCMAKE_BUILD_TYPE=Release -DVDB_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build engine/build --config Release -j
+
+      - name: Test
+        working-directory: engine/build
+        run: ctest --output-on-failure
