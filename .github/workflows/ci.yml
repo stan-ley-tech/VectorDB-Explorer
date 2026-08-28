@@ -22,3 +22,44 @@ jobs:
       - name: Test
         working-directory: engine/build
         run: ctest --output-on-failure
+
+  backend-tests:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: vectordb
+          POSTGRES_PASSWORD: vectordb
+          POSTGRES_DB: vectordb_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U vectordb"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements-dev.txt
+
+      - name: Build native engine Python bindings
+        run: |
+          cmake -S engine -B engine/build -DCMAKE_BUILD_TYPE=Release -DVDB_BUILD_TESTS=OFF -DVDB_BUILD_PYTHON_BINDINGS=ON
+          cmake --build engine/build --config Release -j
+
+      - name: Run backend tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://vectordb:vectordb@localhost:5432/vectordb_test
+          TEST_DATABASE_URL: postgresql+psycopg://vectordb:vectordb@localhost:5432/vectordb_test
+          PYTHONPATH: ${{ github.workspace }}/engine/build/bindings
+        run: pytest -q
