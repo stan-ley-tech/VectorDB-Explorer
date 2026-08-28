@@ -1,0 +1,58 @@
+# C++ build artifacts
+engine/build/
+engine/out/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Python
+backend/.venv/
+backend/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Datasets (generated/large, keep samples only)
+datasets/generated/
+
+# Benchmark output
+benchmarks/results/*.json
+!benchmarks/results/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
