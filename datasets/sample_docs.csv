@@ -1,0 +1,11 @@
+id,text,category
+auth-middleware,Authentication middleware validates the bearer token on every incoming API request,security
+jwt-implementation,Implementing JWT issuance and verification with short-lived access tokens and refresh tokens,security
+api-security-guide,A guide to securing public APIs with rate limiting authentication and input validation,security
+rate-limiting,Configuring a token bucket rate limiter in front of public API endpoints,security
+db-connection-pooling,Tuning PostgreSQL connection pool size and timeout settings for high concurrency workloads,database
+db-indexing,Choosing the right index type for range queries versus equality lookups in PostgreSQL,database
+vector-search-intro,An introduction to approximate nearest neighbor search using inverted file indexes,search
+hnsw-vs-ivf,Comparing HNSW and IVF indexing strategies for high dimensional vector search,search
+deploy-zero-downtime,Deploying containerized services to production with rolling updates and health checks,ops
+observability-logging,Structured logging and distributed tracing for microservices running in containers,ops
