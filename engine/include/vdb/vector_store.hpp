@@ -28,6 +28,12 @@ public:
     std::size_t dim() const { return dim_; }
     std::size_t size() const { return ids_.size(); }
 
+    // Bumped on every upsert/remove. Approximate indexes built over a
+    // snapshot of this store (see IVFIndex) record the version at build
+    // time so a search against a mutated store can be rejected instead of
+    // silently scanning stale row indices.
+    std::uint64_t version() const { return version_; }
+
     bool contains(std::uint64_t id) const {
         return id_to_row_.find(id) != id_to_row_.end();
     }
@@ -37,12 +43,14 @@ public:
         auto it = id_to_row_.find(id);
         if (it != id_to_row_.end()) {
             std::copy(vec, vec + dim_, data_.begin() + static_cast<std::ptrdiff_t>(it->second * dim_));
+            ++version_;
             return;
         }
         const std::size_t row = ids_.size();
         id_to_row_.emplace(id, row);
         ids_.push_back(id);
         data_.insert(data_.end(), vec, vec + dim_);
+        ++version_;
     }
 
     // Removes a vector by id. Returns false if the id was not present.
@@ -66,6 +74,7 @@ public:
         ids_.pop_back();
         data_.resize(last_row * dim_);
         id_to_row_.erase(it);
+        ++version_;
         return true;
     }
 
@@ -89,6 +98,7 @@ private:
     std::vector<float> data_;
     std::vector<std::uint64_t> ids_;
     std::unordered_map<std::uint64_t, std::size_t> id_to_row_;
+    std::uint64_t version_ = 0;
 };
 
 }  // namespace vdb
